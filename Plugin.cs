@@ -1,11 +1,8 @@
 ﻿using BepInEx;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityEngine.UI;
-using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using UKUIHelper;
 
 namespace FPSMeter
@@ -22,34 +19,20 @@ namespace FPSMeter
         GameObject fpsText;
         private void Awake()
         {
-            StartCoroutine(CheckForUpdates());
+            StartCoroutine(Wait(0));
+            //UnityEngine.SceneManagement.SceneManager.sceneLoaded += Scene;
         }
-        IEnumerator CheckForUpdates()
+        void Scene(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
         {
-            UnityWebRequest request = UnityWebRequest.Get("https://api.github.com/repos/ZedDevStuff/UKUIHElper/releases/latest");
-            yield return request.SendWebRequest();
-            if(request.isNetworkError || request.isHttpError)
+            initialized = false;
+            if(scene.name.Contains("Level") || !scene.name.Contains("Menu"))
             {
-                Logger.LogError(request.error);
+                StartCoroutine(Wait(0.5f));
             }
-            else
-            {
-                ReleaseData latestVersion = JsonUtility.FromJson<ReleaseData>(request.downloadHandler.text);
-                if(latestVersion.tag_name != PluginInfo.PLUGIN_VERSION)
-                {
-                    Logger.LogInfo("New version available: " + latestVersion);
-                    Logger.LogInfo("Download it at: " + latestVersion.browser_download_url);
-                }
-                else
-                {
-                    Logger.LogInfo("You have the latest version.");
-                }
-            }
-            Init();
         }
-
-        void Init()
+        IEnumerator Wait(float time)
         {
+            yield return new WaitForSeconds(time);
             fpsText = UIHelper.CreateText();
             GameObject canvas = UIHelper.CreateOverlay(true);
             canvas.GetComponent<Canvas>().sortingOrder = 1000;
@@ -88,14 +71,4 @@ namespace FPSMeter
             }
         }
     }
-}
-public class ReleaseData
-{
-    public string name;
-    public string tag_name;
-    public string browser_download_url;
-}
-public class UpdaterData
-{
-    public static string github = "ZedDevStuff/FPSMeter";
 }
